@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0/EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.toy.subkeeper.mapper.AssignmentMapper">
+    <select id="detail" parameterType="hashMap" resultType="com.toy.subkeeper.DTO.AssignmentDto$DetailResDto">
+        SELECT assignment.id
+            , assignment.deleted
+            , assignment.created_at as createdAt
+            , assignment.modified_at as modifiedAt
+            , assignment.assignment_name as assignmentName
+            , assignment.due_date as dueDate
+            , assignment.is_complete as isComplete
+            , assignment.category
+
+            , assignment.subject_id as subjectId
+            , subject.subject_name as subjectName
+
+            , CASE
+                WHEN assignment.due_date &lt; CURDATE() THEN 'OVERDUE'
+                WHEN assignment.due_date = CURDATE() THEN 'WITHIN_24_HOURS'
+                WHEN assignment.due_date = DATE_ADD(CURDATE(), INTERVAL 1 DAY) THEN 'WITHIN_48_HOURS'
+                ELSE 'NORMAL'
+            END as deadlineStatus
+        FROM assignment
+        JOIN subject ON assignment.subject_id = subject.id
+        WHERE assignment.id = #{req.id}
+    </select>
+
+    <!--  공통 WHERE 절  -->
+    <sql id="commonWhere">
+        WHERE assignment.id is not null
+        <if test = "req.deleted != null">AND assignment.deleted = #{req.deleted}</if>
+        <if test = "req.subjectName != null">AND subject.subject_name = #{req.subjectName}</if>
+        <if test="req.categories != null and req.categories.size() > 0">
+            AND assignment.category IN
+            <foreach collection="req.categories" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </sql>
+
+    <select id="list" parameterType="hashMap" resultType="com.toy.subkeeper.DTO.AssignmentDto$DetailResDto">
+        SELECT assignment.id
+        FROM assignment
+        LEFT JOIN subject ON assignment.subject_id = subject.id
+        LEFT JOIN semester ON subject.semester_id = semester.id
+
+        <include refid="commonWhere"/>
+        AND semester.user_id = #{reqUserId}
+
+        ORDER BY assignment.id DESC
+    </select>
+</mapper>

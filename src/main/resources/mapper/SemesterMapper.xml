@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0/EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.toy.subkeeper.mapper.SemesterMapper">
+    <select id="detail" parameterType="hashMap" resultType="com.toy.subkeeper.DTO.SemesterDto$DetailResDto">
+        SELECT semester.id
+            , semester.deleted
+            , semester.created_at as createdAt
+            , semester.modified_at as modifiedAt
+            , semester.semester_name as semesterName
+            , semester.user_id as userId
+        FROM semester
+        WHERE semester.id = #{id}
+    </select>
+
+    <select id="existsByUserIdAndSemName" parameterType="hashMap" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM semester
+            WHERE user_id = #{reqUserId}
+              AND semester_name = #{semesterName}
+              AND deleted = false
+        )
+    </select>
+
+    <!--  공통 WHERE 절  -->
+    <sql id="commonWhere">
+        WHERE semester.id is not null
+        <if test = "req.deleted != null">AND semester.deleted = #{req.deleted}</if>
+        <if test = "req.semesterName != null">AND semester.semester_name = #{req.semesterName}</if>
+        AND semester.user_id = #{reqUserId}
+    </sql>
+
+    <select id="list" parameterType="hashMap" resultType="com.toy.subkeeper.DTO.SemesterDto$DetailResDto">
+        SELECT semester.id
+        FROM semester
+
+        <include refid="commonWhere"/>
+
+        ORDER BY semester.id DESC
+    </select>
+</mapper>

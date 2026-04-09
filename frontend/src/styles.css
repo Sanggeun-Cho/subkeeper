@@ -69,7 +69,7 @@ body{
 
 /* ===== 버튼 ===== */
 .btn{ padding:8px 12px; border-radius:8px; border:1px solid #d1d5db; background:#fff; cursor:pointer; color:#111; }
-.btn.ok{ background:var(--ok); color:#111 !important; border-color:var(--ok); } /* 모달에서 가독성 ↑ */
+.btn.ok{ background:var(--ok); color:#111 !important; border-color:var(--ok); } 
 .btn.logout{ background:var(--logout); border-color:var(--logout); color:#fff; font-weight:800; }
 .btn.logout:hover{ background:var(--logout-hover); border-color:var(--logout-hover); }
 .btn.outline{ background:transparent; color:#111; border:2px solid #111; font-weight:800; }
@@ -254,9 +254,7 @@ body{
 }
 .taskCapsule.todo{ background:#fff; }
 .taskCapsule.urgent{ background:var(--capsule-urgent); border-color:var(--capsule-urgent); }
-/* 완료된 과제 스타일 */
 .taskCapsule.done{ background:var(--capsule-done); border-color:var(--capsule-done); }
-/* ✅ [추가] 기한 지남(Overdue) 스타일 (완료됨과 동일하게 회색 처리) */
 .taskCapsule.overdue{ background:var(--capsule-done); border-color:var(--capsule-done); }
 
 .capsuleLeft{ display:flex; align-items:center; gap:14px; }
@@ -437,3 +435,83 @@ body{
 .calItem.done{ background:#f2f6f3; border-color:#cfe3d1; }
 .calHash{ font-size:11px; opacity:.7; margin-bottom:2px; }
 .calName{ font-size:13px; font-weight:800; }
+
+/* ========== 반응형(모바일/태블릿) 스타일 추가 ========== */
+@media (max-width: 800px) {
+    /* 1. ✅ 스크롤 문제 해결: 모바일에서는 전체 화면 세로 스크롤 허용 */
+    html, body, #root {
+        height: auto;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    /* 2. ✅ 상단바 겹침 해결: 억지로 고정된 위치 풀고 양끝으로 밀어내기 */
+    .topbar {
+        justify-content: space-between;
+        padding: 0 16px;
+    }
+    .brandLogo {
+        position: static;
+        transform: none;
+        height: 28px;
+    }
+    .hello {
+        position: static;
+        font-size: 13px;
+        right: auto;
+    }
+
+    /* 3. 전체 레이아웃 세로 배치 (그리드 해제) */
+    .shell { 
+        display: flex; 
+        flex-direction: column; 
+        height: auto; 
+        min-height: calc(100vh - 68px); 
+        overflow: visible;
+    }
+    
+    /* 4. 사이드바(학기 목록) 가로 스크롤로 변경 */
+    .side { 
+        width: 100%; height: auto; 
+        border-right: none; border-bottom: 1px solid #dfe3ee; 
+        padding: 12px 16px; 
+    }
+    .headerRow { margin-bottom: 6px; }
+    .semList { 
+        flex-direction: row; overflow-x: auto; 
+        padding-bottom: 4px; gap: 8px; margin-top: 0;
+    }
+    .semRow { flex: 0 0 auto; white-space: nowrap; } 
+
+    /* 5. 메인 영역 */
+    .main { overflow: visible; height: auto; }
+    .contentArea { overflow: visible; height: auto; padding-bottom: 80px; }
+    
+    /* 상단 필터 부분 세로로 자연스럽게 정렬 */
+    .toolbar.splitLayout { flex-direction: column; gap: 12px; }
+    .subjectZone, .controlZone { width: 100%; }
+    .controlZone { flex-wrap: wrap; }
+
+    /* 6. 칼럼(과제 목록) 세로 배치 */
+    .cols { 
+        display: flex; 
+        flex-direction: column-reverse; /* 미완료(해야할 과제)를 위로 올림 */
+        gap: 24px; 
+    } 
+    .rightCol { padding-left: 0; }
+    .rightCol::before { display: none; } /* 가운데 세로 구분선 제거 */
+
+    /* 모바일에서는 자체 스크롤 대신 전체 화면 스크롤 사용 */
+    .listScroll { overflow: visible; height: auto; }
+
+    /* 7. 모달 & 달력 미세 조정 */
+    .modal { width: 92vw; padding: 18px; }
+    .modal:has(.calendarModal) { width: 96vw; }
+    .calGrid { grid-auto-rows: 60px; gap: 2px; }
+    .calDay { padding: 2px; }
+    .calDate { font-size: 11px; }
+    .calName { font-size: 10px; }
+    
+    /* 8. 로그인 패널 */
+    .login-panel { width: 90vw; padding: 24px 16px; }
+}

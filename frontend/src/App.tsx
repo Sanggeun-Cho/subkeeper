@@ -36,7 +36,11 @@ interface Dashboard {
 }
 
 /** ===== 상수/유틸 ===== */
-const API_BASE = "/api";
+// 배포용
+// const API_BASE = "/api";
+
+// 테스트용
+const API_BASE = "";
 
 const CATEGORY_LABEL: Record<number, "과제" | "강의" | "할 일"> = {
     0: "과제",
@@ -96,9 +100,8 @@ function shiftYMD(ymd: string, days: number): string {
 
 const DATE_OFFSET_DAYS_FOR_DISPLAY = 1;
 
-/** ✅ [수정] 배지 로직: overdue(기한 지남) 상태 추가 */
+/** 배지 로직: overdue(기한 지남) 상태 처리 */
 function getBadgeForFront(dueDate: string, isComplete: number, serverLabel?: string){
-    // 완료된 건 기본 처리
     if (isComplete === 1) return { label: serverLabel || "DUE", urgent: false, overdue: false };
 
     const ymd = pickYMD(dueDate);
@@ -116,11 +119,9 @@ function getBadgeForFront(dueDate: string, isComplete: number, serverLabel?: str
 
     const diffDays = Math.round((due.getTime() - today.getTime()) / 86_400_000);
 
-    // 기존 로직 유지
     if (diffDays === 0) return { label: "D-1",   urgent: true, overdue: false };
     if (diffDays === -1) return { label: "D-DAY", urgent: true, overdue: false };
     
-    // ✅ [추가] 기한 지남 (D-DAY 보다 과거)
     if (diffDays < -1) return { label: "OVER", urgent: true, overdue: true };
 
     return { label: serverLabel || "DUE", urgent: false, overdue: false };
@@ -346,12 +347,12 @@ const DashboardView:React.FC<{ user:User; onLogout:()=>void }>=({ user, onLogout
         });
     };
 
+    // ✅ [리프레시 버그 수정] data.dashboard.semId 가 아닌 현재 상태의 semId를 사용합니다.
     async function silentRefresh(){
-        if (!data?.dashboard.semId || refreshingRef.current) return;
+        if (!semId || refreshingRef.current) return;
         refreshingRef.current = true;
         try {
-            const sem = data.dashboard.semId;
-            const d = await getDashboard(user.userId, sem, filterSubId, filterCats);
+            const d = await getDashboard(user.userId, semId, filterSubId, filterCats);
 
             const sMap = new Map<number, string>();
             (d.dashboard.subjectList || []).forEach(s =>
@@ -741,8 +742,6 @@ const DashboardView:React.FC<{ user:User; onLogout:()=>void }>=({ user, onLogout
                                                     const hash = `# ${cat}  # ${truncateSubject(sub)}`;
                                                     const badge = getBadgeForFront(a.dueDate, a.isComplete, a.dueLabel);
 
-                                                    // ✅ [수정] 기한 지남 여부에 따라 클래스 분기
-                                                    // overdue가 true면 "taskCapsule overdue" (회색) 적용
                                                     const capsuleClass = badge.overdue 
                                                         ? "taskCapsule overdue" 
                                                         : (badge.urgent ? "taskCapsule urgent" : "taskCapsule todo");
@@ -796,8 +795,6 @@ const DashboardView:React.FC<{ user:User; onLogout:()=>void }>=({ user, onLogout
                                         onClick={()=>setCalRefDate(d=> new Date(d.getFullYear(), d.getMonth()+1, 1))}>
                                     <img src={calNextIcon} alt="" className="calIcon" />
                                 </button>
-
-
                         </div>
 
                             <div className="calHeaderRow">

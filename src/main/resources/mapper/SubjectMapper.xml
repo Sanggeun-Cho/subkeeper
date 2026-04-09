@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0/EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.toy.subkeeper.mapper.SubjectMapper">
+    <select id="detail" parameterType="hashMap" resultType="com.toy.subkeeper.DTO.SubjectDto$DetailResDto">
+        SELECT subject.id
+            , subject.deleted
+            , subject.created_at as createdAt
+            , subject.modified_at as modifiedAt
+            , subject.subject_name as subjectName
+            , subject.semester_id as semesterId
+        FROM subject
+        WHERE subject.id = #{id}
+    </select>
+
+    <select id="existsBySemesterIdAndSubjectName" parameterType="hashMap" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM subject
+            JOIN semester ON subject.semester_id = semester.id
+            WHERE semester.user_id = #{reqUserId}
+              AND semester.id = #{req.semesterId}
+              AND subject.subject_name = #{req.subjectName}
+              AND subject.deleted = false
+        )
+    </select>
+
+    <!--  공통 WHERE 절  -->
+    <sql id="commonWhere">
+        WHERE subject.id is not null
+        <if test = "req.deleted != null">AND subject.deleted = #{req.deleted}</if>
+        <if test = "req.subjectName != null">AND subject.subject_name = #{req.subjectName}</if>
+    </sql>
+
+    <select id="list" parameterType="hashMap" resultType="com.toy.subkeeper.DTO.SubjectDto$DetailResDto">
+        SELECT subject.id
+        FROM subject
+        JOIN semester ON subject.semester_id = semester.id
+
+        <include refid="commonWhere"/>
+        AND semester.user_id = #{reqUserId}
+
+        ORDER BY subject.id DESC
+    </select>
+</mapper>

@@ -1,39 +1,67 @@
 package com.toy.subkeeper.domain;
 
-import com.toy.subkeeper.domain.Subject;
+import com.toy.subkeeper.DTO.AssignmentDto;
+import com.toy.subkeeper.DTO.DefaultDto;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.Date;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
-@Entity @Getter @NoArgsConstructor @AllArgsConstructor @Builder
-@Setter // 내용 수정용
-public class Assignment {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+@Entity @Getter @Setter @Builder
+public class Assignment extends AuditingFields {
+    Long subjectId;
 
     @Column(nullable = false, length = 50)
-    private String assignName;
-
-    @Temporal(TemporalType.TIMESTAMP)
-    @Column(nullable = false)
-    private Date dueDate;
+    String assignmentName;
 
     @Column(nullable = false)
-    private Integer category; // 0 : 과제, 1 : 강의, 2 : 할 일
+    LocalDate dueDate;
 
     @Column(nullable = false)
-    private int isComplete; // 0 : 미완료, 1 : 완료, 2 : 하루 남은 과제
+    @Enumerated(EnumType.STRING)
+    AssignmentCategory category; // ASSIGNMENT, LECTURE, TODO
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "sub_id", nullable = false)
-    private Subject subject;
+    @Column(nullable = false)
+    boolean isComplete; // ture : 완료, false : 미완료
 
-    public Assignment(String assignName, Date dueDate, int category, Subject subject, int isComplete) {
-        this.assignName = assignName;
+    protected Assignment() {}
+    private Assignment(Long subjectId, String assignmentName, LocalDate dueDate, AssignmentCategory category, boolean isComplete) {
+        this.subjectId = subjectId;
+        this.assignmentName = assignmentName;
         this.dueDate = dueDate;
         this.category = category;
-        this.subject = subject;
         this.isComplete = isComplete;
+    }
+
+    public static Assignment of(Long subjectId, String assignmentName, LocalDate dueDate, AssignmentCategory category, boolean isComplete) {
+        return new Assignment(subjectId, assignmentName, dueDate, category, isComplete);
+    }
+
+    public void update(AssignmentDto.UpdateReqDto param){
+        if(param.getDeleted() != null){
+            setDeleted(param.getDeleted());
+        }
+        if(param.getAssignmentName() != null){
+            setAssignmentName(param.getAssignmentName());
+        }
+        if(param.getDueDate() != null){
+            setDueDate(param.getDueDate());
+        }
+        if(param.getCategory() != null){
+            setCategory(param.getCategory());
+        }
+        if(param.getIsComplete() != null){
+            setComplete(param.getIsComplete());
+        }
+        if(param.getSubjectId() != null){
+            setSubjectId(param.getSubjectId());
+        }
+    }
+
+    public DefaultDto.CreateResDto toCreateResDto(){
+        return DefaultDto.CreateResDto.builder()
+                .id(getId())
+                .build();
     }
 }

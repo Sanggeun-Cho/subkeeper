@@ -1,34 +1,39 @@
 package com.toy.subkeeper.domain;
 
-import com.toy.subkeeper.domain.Subject;
-import com.toy.subkeeper.domain.User;
+import com.toy.subkeeper.DTO.DefaultDto;
+import com.toy.subkeeper.DTO.SemesterDto;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-import java.util.ArrayList;
-import java.util.List;
-
-@Entity @Builder @Getter @AllArgsConstructor @NoArgsConstructor
-public class Semester {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+@Entity @Getter @Setter
+public class Semester extends AuditingFields{
+    Long userId;
 
     @Column(nullable = false, length = 50)
-    private String semName;
+    private String semesterName;
 
-    // 과목과 one to many 관계, 학기가 삭제되면 과목들도 모두 지워짐
-    @OneToMany(mappedBy = "semester", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Subject> subjectList = new ArrayList<>();
+    protected Semester() {}
+    private Semester(Long userId, String semesterName) {
+        this.userId = userId;
+        this.semesterName = semesterName;
+    }
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    public static Semester of(Long userId, String semesterName) {
+        return new Semester(userId, semesterName);
+    }
 
-    public Semester(String semName, User user) {
-        this.semName = semName;
-        this.user = user;
+    public DefaultDto.CreateResDto toCreateResDto() {
+        return DefaultDto.CreateResDto.builder()
+                .id(getId())
+                .build();
+    }
+
+    public void update(SemesterDto.UpdateReqDto param){
+        if(param.getDeleted() != null) {
+            setDeleted(param.getDeleted());
+        }
+        if(param.getSemesterName() != null) {
+            setSemesterName(param.getSemesterName());
+        }
     }
 }

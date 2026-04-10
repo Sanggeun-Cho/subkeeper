@@ -11,4 +11,5 @@ import java.util.List;
 
 public interface AssignmentRepository extends CrudRepository<Assignment, Long> {
 
+    List<Assignment> findBySubjectId(Long id);
 }

@@ -1,13 +1,17 @@
 package com.toy.subkeeper.service.Impl;
 
+import com.toy.subkeeper.DTO.AssignmentDto;
 import com.toy.subkeeper.DTO.DefaultDto;
 import com.toy.subkeeper.DTO.SubjectDto;
+import com.toy.subkeeper.domain.Assignment;
 import com.toy.subkeeper.exception.DuplicateSubNameException;
 import com.toy.subkeeper.domain.Semester;
 import com.toy.subkeeper.mapper.SubjectMapper;
+import com.toy.subkeeper.repository.AssignmentRepository;
 import com.toy.subkeeper.repository.SemesterRepository;
 import com.toy.subkeeper.domain.Subject;
 import com.toy.subkeeper.repository.SubjectRepository;
+import com.toy.subkeeper.service.AssignmentService;
 import com.toy.subkeeper.service.SubjectService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -23,8 +27,10 @@ import java.util.List;
 
 public class SubjectServiceImpl implements SubjectService {
     private final SubjectRepository subjectRepository;
-    private final SemesterRepository semesterRepository;
     private final SubjectMapper subjectMapper;
+
+    private final AssignmentRepository assignmentRepository;
+    private final AssignmentService assignmentService;
 
     // 과목 생성
     @Override
@@ -57,6 +63,13 @@ public class SubjectServiceImpl implements SubjectService {
                 .id(param.getId())
                 .deleted(true)
                 .build(), reqUserId);
+
+        List<Assignment> assignments = assignmentRepository.findBySubjectId(param.getId());
+        for (Assignment assignment : assignments) {
+            assignmentService.delete(AssignmentDto.UpdateReqDto.builder()
+                    .id(assignment.getId())
+                    .build(), reqUserId);
+        }
     }
     
     public SubjectDto.DetailResDto get(DefaultDto.DetailReqDto param, Long reqUserId) {

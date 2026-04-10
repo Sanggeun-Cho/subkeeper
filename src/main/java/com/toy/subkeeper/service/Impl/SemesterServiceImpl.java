@@ -2,12 +2,16 @@ package com.toy.subkeeper.service.Impl;
 
 import com.toy.subkeeper.DTO.DefaultDto;
 import com.toy.subkeeper.DTO.SemesterDto;
+import com.toy.subkeeper.DTO.SubjectDto;
+import com.toy.subkeeper.domain.Subject;
 import com.toy.subkeeper.exception.NoMatchingDataException;
 import com.toy.subkeeper.mapper.SemesterMapper;
 import com.toy.subkeeper.exception.DuplicateSemNameException;
 import com.toy.subkeeper.domain.Semester;
 import com.toy.subkeeper.repository.SemesterRepository;
+import com.toy.subkeeper.repository.SubjectRepository;
 import com.toy.subkeeper.service.SemesterService;
+import com.toy.subkeeper.service.SubjectService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,6 +26,8 @@ import java.util.List;
 public class SemesterServiceImpl implements SemesterService {
     private final SemesterRepository semesterRepository;
     private final SemesterMapper semesterMapper;
+    private final SubjectService subjectService;
+    private final SubjectRepository subjectRepository;
 
     // 학기 생성
     @Override
@@ -61,6 +67,13 @@ public class SemesterServiceImpl implements SemesterService {
                 .id(param.getId())
                 .deleted(true)
                 .build(), reqUserId);
+
+        List<Subject> subjects = subjectRepository.findBySemesterId(param.getId());
+        for (Subject subject : subjects) {
+            subjectService.delete(SubjectDto.UpdateReqDto.builder()
+                    .id(subject.getId())
+                    .build(), reqUserId);
+        }
     }
 
     public SemesterDto.DetailResDto get(DefaultDto.DetailReqDto param, Long reqUserId) {

@@ -34,6 +34,7 @@ out/
 *.yml
 *.env
 *.properties
+!.github/workflows/deploy.yml
 
 ### Java 일반 ###
 *.class

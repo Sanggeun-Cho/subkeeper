@@ -1,5 +1,5 @@
 # 1. 자바 17 버전을 기반으로 텅 빈 실행 환경을 가져옵니다.
-FROM openjdk:17-jdk-jammy
+FROM eclipse-temurin:17-jdk-jammy
 
 # 2. 깃허브 가상 서버에서 빌드되어 생성될 jar 파일의 위치를 변수로 설정합니다.
 ARG JAR_FILE=build/libs/*SNAPSHOT.jar

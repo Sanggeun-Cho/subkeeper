@@ -11,9 +11,10 @@
     <style>
         body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; }
         .sidebar-transition { transition: transform 0.3s ease-in-out; }
-        /* 스크롤바 디자인 */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        /* 스크롤바 디자인: 얇고 공간을 적게 차지하도록 수정 */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
 
         /* 모달 애니메이션 */
         .modal-show { display: flex !important; animation: fadeIn 0.2s ease-out; }
@@ -25,181 +26,187 @@
 <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black bg-opacity-50 z-20 hidden"></div>
 
 <aside id="sidebar" class="w-64 bg-white border-r shadow-sm flex flex-col absolute inset-y-0 left-0 transform -translate-x-full z-30 sidebar-transition">
-    <div class="p-5 flex justify-between items-center border-b shrink-0">
-        <h2 class="text-xl font-bold text-gray-800">학기 목록</h2>
+    <div class="p-4 flex justify-between items-center border-b shrink-0">
+        <h2 class="text-lg font-bold text-gray-800">학기 목록</h2>
         <button onclick="toggleSidebar()" class="text-gray-500 hover:text-gray-800 text-xl font-bold">✖</button>
     </div>
-    <div class="p-4 flex-1 overflow-y-auto">
-        <ul id="semester-list" class="space-y-2"></ul>
+    <div class="p-3 flex-1 overflow-y-auto">
+        <ul id="semester-list" class="space-y-1.5"></ul>
     </div>
     <div class="p-4 border-t shrink-0">
-        <button onclick="openSemesterModal()" class="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition font-medium shadow-sm">
+        <button onclick="openSemesterModal()" class="w-full bg-blue-600 text-white p-2.5 rounded-lg hover:bg-blue-700 transition font-medium shadow-sm text-sm">
             + 새 학기 생성
         </button>
     </div>
 </aside>
 
 <main class="flex-1 flex flex-col h-screen overflow-hidden w-full relative">
-    <header class="bg-white shadow-sm h-16 flex items-center justify-between px-6 z-10 w-full shrink-0">
-        <div class="flex items-center space-x-4">
+    <header class="bg-white shadow-sm h-14 md:h-16 flex items-center justify-between px-4 md:px-6 z-10 w-full shrink-0 relative">
+        <div class="flex items-center space-x-3 w-1/3">
             <button onclick="toggleSidebar()" class="text-gray-600 hover:text-gray-900 text-2xl focus:outline-none">☰</button>
             <div class="flex items-center space-x-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                     <polyline points="22 4 12 14.01 9 11.01"></polyline>
                 </svg>
-                <span class="text-xl font-bold text-gray-800 hidden sm:block">Subkeeper</span>
+                <span class="text-lg font-bold text-gray-800 hidden sm:block">Subkeeper</span>
             </div>
         </div>
-        <div class="flex items-center space-x-4">
-            <span id="user-name" class="font-medium text-gray-700"></span>
-            <button onclick="logout()" class="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg transition">로그아웃</button>
+
+        <div id="header-semester-title" class="hidden absolute left-1/2 transform -translate-x-1/2 font-bold text-gray-800 text-base md:text-lg truncate w-1/3 text-center">
+            학기를 불러오는 중...
+        </div>
+
+        <div class="flex items-center justify-end space-x-3 w-1/3">
+            <span id="user-name" class="font-medium text-gray-700 text-sm hidden sm:block truncate"></span>
+            <button onclick="logout()" class="text-xs md:text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 py-1.5 px-3 rounded-lg transition shrink-0">로그아웃</button>
         </div>
     </header>
 
-    <div class="flex-1 overflow-hidden p-6 md:p-10 flex flex-col">
+    <div class="flex-1 overflow-hidden p-4 md:p-6 flex flex-col">
+
         <div id="empty-semester-state" class="hidden flex-1 flex-col items-center justify-center text-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-24 h-24 text-blue-200 mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-20 h-20 text-blue-200 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
-            <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-3">등록된 학기가 없습니다</h2>
-            <p class="text-gray-500 mb-8 max-w-md">새로운 학기를 추가하고 과제들을 체계적으로 관리해보세요.</p>
-            <button onclick="openSemesterModal()" class="bg-blue-600 text-white px-8 py-3.5 rounded-xl hover:bg-blue-700 transition shadow-lg font-bold text-lg hover:scale-105 transform">
+            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-2">등록된 학기가 없습니다</h2>
+            <p class="text-gray-500 mb-6 text-sm max-w-md">새로운 학기를 추가하고 과제들을 체계적으로 관리해보세요.</p>
+            <button onclick="openSemesterModal()" class="bg-blue-600 text-white px-6 py-2.5 rounded-xl hover:bg-blue-700 transition shadow-md font-bold text-base hover:scale-105 transform">
                 + 새 학기 시작하기
             </button>
         </div>
 
-        <h1 id="current-semester-title" class="text-3xl font-bold text-gray-900 mb-8 shrink-0">학기를 불러오는 중...</h1>
-
-        <section class="mb-6 shrink-0 hidden" id="subject-section">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-semibold text-gray-800">과목</h2>
-                <button onclick="openSubjectModal()" class="text-sm bg-blue-100 text-blue-700 py-1.5 px-3 rounded-md hover:bg-blue-200 font-medium">+ 과목 추가</button>
+        <section class="mb-4 shrink-0 hidden" id="subject-section">
+            <div class="flex items-center justify-between mb-2">
+                <h2 class="text-lg font-semibold text-gray-800">과목</h2>
+                <button onclick="openSubjectModal()" class="text-xs bg-blue-100 text-blue-700 py-1 px-2.5 rounded-md hover:bg-blue-200 font-medium">+ 과목 추가</button>
             </div>
-            <div id="subject-container" class="flex gap-4 overflow-x-auto pb-2"></div>
+            <div id="subject-container" class="flex gap-3 overflow-x-auto pb-1.5"></div>
         </section>
 
         <div class="hidden flex-1 flex flex-col overflow-hidden" id="assignment-section">
-            <div class="bg-white border border-gray-200 p-4 rounded-xl shadow-sm mb-6 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div class="flex items-center space-x-3 w-full sm:w-auto">
-                    <label class="text-sm font-bold text-gray-700 shrink-0">과목 필터</label>
-                    <select id="filter-subject" onchange="fetchFilteredAssignments()" class="w-full sm:w-auto border-gray-300 border p-2 rounded-lg text-sm focus:ring-blue-500">
+            <div class="bg-white border border-gray-200 p-2.5 md:p-3 rounded-lg shadow-sm mb-4 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div class="flex items-center space-x-2 w-full sm:w-auto">
+                    <label class="text-xs font-bold text-gray-700 shrink-0">과목 필터</label>
+                    <select id="filter-subject" onchange="fetchFilteredAssignments()" class="w-full sm:w-auto border-gray-300 border py-1 px-2 rounded-md text-xs focus:ring-blue-500">
                         <option value="">전체 과목</option>
                     </select>
                 </div>
-                <div class="flex items-center space-x-4 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-                    <label class="text-sm font-bold text-gray-700 shrink-0">카테고리</label>
-                    <label class="flex items-center space-x-1.5 text-sm cursor-pointer shrink-0">
-                        <input type="checkbox" value="ASSIGNMENT" class="filter-category w-4 h-4 text-blue-600 rounded" onchange="fetchFilteredAssignments()"> <span class="text-gray-700">과제</span>
+                <div class="flex items-center space-x-3 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+                    <label class="text-xs font-bold text-gray-700 shrink-0">카테고리</label>
+                    <label class="flex items-center space-x-1 text-xs cursor-pointer shrink-0">
+                        <input type="checkbox" value="ASSIGNMENT" class="filter-category w-3.5 h-3.5 text-blue-600 rounded" onchange="fetchFilteredAssignments()"> <span class="text-gray-700">과제</span>
                     </label>
-                    <label class="flex items-center space-x-1.5 text-sm cursor-pointer shrink-0">
-                        <input type="checkbox" value="LECTURE" class="filter-category w-4 h-4 text-blue-600 rounded" onchange="fetchFilteredAssignments()"> <span class="text-gray-700">강의</span>
+                    <label class="flex items-center space-x-1 text-xs cursor-pointer shrink-0">
+                        <input type="checkbox" value="LECTURE" class="filter-category w-3.5 h-3.5 text-blue-600 rounded" onchange="fetchFilteredAssignments()"> <span class="text-gray-700">강의</span>
                     </label>
-                    <label class="flex items-center space-x-1.5 text-sm cursor-pointer shrink-0">
-                        <input type="checkbox" value="TODO" class="filter-category w-4 h-4 text-blue-600 rounded" onchange="fetchFilteredAssignments()"> <span class="text-gray-700">할 일</span>
+                    <label class="flex items-center space-x-1 text-xs cursor-pointer shrink-0">
+                        <input type="checkbox" value="TODO" class="filter-category w-3.5 h-3.5 text-blue-600 rounded" onchange="fetchFilteredAssignments()"> <span class="text-gray-700">할 일</span>
                     </label>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1 min-h-0">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 flex-1 min-h-0">
+
                 <section class="flex flex-col min-h-0">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-4 shrink-0 flex items-center">
-                        <span class="w-3 h-3 rounded-full bg-gray-400 mr-2"></span>완료된 과제
-                    </h2>
-                    <div id="completed-assignments" class="space-y-4 flex-1 overflow-y-auto pr-2 pb-4 min-h-0"></div>
+                    <div class="flex items-center justify-between mb-2 shrink-0">
+                        <h2 class="text-base font-semibold text-gray-800 flex items-center">
+                            <span class="w-2.5 h-2.5 rounded-full bg-blue-500 mr-2"></span>진행 중인 과제
+                        </h2>
+                        <button onclick="openAssignmentModal()" class="text-xs bg-blue-600 text-white py-1 px-2.5 rounded-md hover:bg-blue-700 font-medium">+ 과제 추가</button>
+                    </div>
+                    <div id="incomplete-assignments" class="space-y-3 flex-1 overflow-y-auto pr-1 pb-2 min-h-0"></div>
                 </section>
 
                 <section class="flex flex-col min-h-0">
-                    <div class="flex items-center justify-between mb-4 shrink-0">
-                        <h2 class="text-xl font-semibold text-gray-800 flex items-center">
-                            <span class="w-3 h-3 rounded-full bg-blue-500 mr-2"></span>진행 중인 과제
-                        </h2>
-                        <button onclick="openAssignmentModal()" class="text-sm bg-blue-600 text-white py-1.5 px-3 rounded-md hover:bg-blue-700 font-medium">+ 과제 추가</button>
-                    </div>
-                    <div id="incomplete-assignments" class="space-y-4 flex-1 overflow-y-auto pr-2 pb-4 min-h-0"></div>
+                    <h2 class="text-base font-semibold text-gray-800 mb-2 shrink-0 flex items-center">
+                        <span class="w-2.5 h-2.5 rounded-full bg-gray-400 mr-2"></span>완료된 과제
+                    </h2>
+                    <div id="completed-assignments" class="space-y-3 flex-1 overflow-y-auto pr-1 pb-2 min-h-0"></div>
                 </section>
+
             </div>
         </div>
     </div>
 
-    <button onclick="toggleCalendar()" class="absolute bottom-8 right-8 w-14 h-14 bg-blue-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:bg-blue-700 transition transform hover:scale-105 z-20 text-2xl">
+    <button onclick="toggleCalendar()" class="absolute bottom-6 right-6 w-12 h-12 md:w-14 md:h-14 bg-blue-600 text-white rounded-full shadow-xl flex items-center justify-center hover:bg-blue-700 transition transform hover:scale-105 z-20 text-xl md:text-2xl">
         📅
     </button>
 </main>
 
 <div id="calendar-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 justify-center items-center p-4 sm:p-8">
-    <div class="bg-white rounded-2xl w-full h-full max-w-6xl shadow-2xl flex flex-col relative overflow-hidden">
-        <div class="p-4 border-b flex justify-between items-center bg-gray-50 shrink-0">
-            <h2 class="text-2xl font-bold text-gray-800 flex items-center">📅 일정 캘린더</h2>
-            <button onclick="toggleCalendar()" class="text-gray-500 hover:text-gray-800 text-4xl font-bold leading-none">&times;</button>
+    <div class="bg-white rounded-xl w-full h-full max-w-6xl shadow-2xl flex flex-col relative overflow-hidden">
+        <div class="p-3 border-b flex justify-between items-center bg-gray-50 shrink-0">
+            <h2 class="text-xl font-bold text-gray-800 flex items-center">📅 일정 캘린더</h2>
+            <button onclick="toggleCalendar()" class="text-gray-500 hover:text-gray-800 text-3xl font-bold leading-none">&times;</button>
         </div>
-        <div class="p-4 flex-1 overflow-hidden">
+        <div class="p-3 flex-1 overflow-hidden">
             <div id='calendar' class="h-full"></div>
         </div>
     </div>
 </div>
 
 <div id="assignment-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 justify-center items-center">
-    <div class="bg-white p-6 rounded-xl w-96 shadow-xl">
-        <h3 id="modal-title" class="text-xl font-bold mb-4">과제 추가</h3>
+    <div class="bg-white p-5 rounded-xl w-80 md:w-96 shadow-xl">
+        <h3 id="modal-title" class="text-lg font-bold mb-4">과제 추가</h3>
         <input type="hidden" id="modal-id">
         <div class="mb-3">
-            <label class="block text-sm font-medium text-gray-700 mb-1">과제명</label>
-            <input type="text" id="modal-name" class="w-full border p-2 rounded focus:ring-blue-500 focus:border-blue-500" placeholder="과제명 입력">
+            <label class="block text-xs font-medium text-gray-700 mb-1">과제명</label>
+            <input type="text" id="modal-name" class="w-full border p-2 rounded text-sm focus:ring-blue-500 focus:border-blue-500" placeholder="과제명 입력">
         </div>
         <div class="mb-3">
-            <label class="block text-sm font-medium text-gray-700 mb-1">마감일 (YYYY-MM-DD)</label>
-            <input type="date" id="modal-date" class="w-full border p-2 rounded focus:ring-blue-500 focus:border-blue-500">
+            <label class="block text-xs font-medium text-gray-700 mb-1">마감일 (YYYY-MM-DD)</label>
+            <input type="date" id="modal-date" class="w-full border p-2 rounded text-sm focus:ring-blue-500 focus:border-blue-500">
         </div>
         <div class="mb-3">
-            <label class="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
-            <select id="modal-category" class="w-full border p-2 rounded focus:ring-blue-500 focus:border-blue-500">
+            <label class="block text-xs font-medium text-gray-700 mb-1">카테고리</label>
+            <select id="modal-category" class="w-full border p-2 rounded text-sm focus:ring-blue-500 focus:border-blue-500">
                 <option value="ASSIGNMENT">과제</option>
                 <option value="LECTURE">강의</option>
                 <option value="TODO">할 일</option>
             </select>
         </div>
         <div class="mb-3">
-            <label class="block text-sm font-medium text-gray-700 mb-1">담당 과목</label>
-            <select id="modal-subject" class="w-full border p-2 rounded focus:ring-blue-500 focus:border-blue-500"></select>
+            <label class="block text-xs font-medium text-gray-700 mb-1">담당 과목</label>
+            <select id="modal-subject" class="w-full border p-2 rounded text-sm focus:ring-blue-500 focus:border-blue-500"></select>
         </div>
-        <div class="mb-5 flex items-center hidden" id="modal-complete-wrapper">
+        <div class="mb-4 flex items-center hidden" id="modal-complete-wrapper">
             <input type="checkbox" id="modal-complete" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded">
             <label class="ml-2 text-sm font-medium text-gray-700">완료 여부</label>
         </div>
         <div class="flex justify-end space-x-2">
-            <button onclick="closeAssignmentModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded font-medium">취소</button>
-            <button onclick="saveAssignment()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium">저장</button>
+            <button onclick="closeAssignmentModal()" class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded text-sm font-medium">취소</button>
+            <button onclick="saveAssignment()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium">저장</button>
         </div>
     </div>
 </div>
 
 <div id="semester-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 justify-center items-center">
-    <div class="bg-white p-6 rounded-xl w-80 shadow-xl">
-        <h3 id="semester-modal-title" class="text-xl font-bold mb-4">새 학기 생성</h3>
+    <div class="bg-white p-5 rounded-xl w-72 md:w-80 shadow-xl">
+        <h3 id="semester-modal-title" class="text-lg font-bold mb-4">새 학기 생성</h3>
         <input type="hidden" id="semester-modal-id">
-        <div class="mb-5">
-            <label class="block text-sm font-medium text-gray-700 mb-1">학기명</label>
-            <input type="text" id="semester-modal-name" class="w-full border p-2 rounded focus:ring-blue-500 focus:border-blue-500" placeholder="예: 2026년 1학기">
+        <div class="mb-4">
+            <label class="block text-xs font-medium text-gray-700 mb-1">학기명</label>
+            <input type="text" id="semester-modal-name" class="w-full border p-2 rounded text-sm focus:ring-blue-500 focus:border-blue-500" placeholder="예: 2026년 1학기">
         </div>
         <div class="flex justify-end space-x-2">
-            <button onclick="closeSemesterModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded font-medium">취소</button>
-            <button onclick="saveSemester()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium">저장</button>
+            <button onclick="closeSemesterModal()" class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded text-sm font-medium">취소</button>
+            <button onclick="saveSemester()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium">저장</button>
         </div>
     </div>
 </div>
 
 <div id="subject-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 justify-center items-center">
-    <div class="bg-white p-6 rounded-xl w-80 shadow-xl">
-        <h3 id="subject-modal-title" class="text-xl font-bold mb-4">새 과목 추가</h3>
+    <div class="bg-white p-5 rounded-xl w-72 md:w-80 shadow-xl">
+        <h3 id="subject-modal-title" class="text-lg font-bold mb-4">새 과목 추가</h3>
         <input type="hidden" id="subject-modal-id">
-        <div class="mb-5">
-            <label class="block text-sm font-medium text-gray-700 mb-1">과목명</label>
-            <input type="text" id="subject-modal-name" class="w-full border p-2 rounded focus:ring-blue-500 focus:border-blue-500" placeholder="과목명 입력">
+        <div class="mb-4">
+            <label class="block text-xs font-medium text-gray-700 mb-1">과목명</label>
+            <input type="text" id="subject-modal-name" class="w-full border p-2 rounded text-sm focus:ring-blue-500 focus:border-blue-500" placeholder="과목명 입력">
         </div>
         <div class="flex justify-end space-x-2">
-            <button onclick="closeSubjectModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded font-medium">취소</button>
-            <button onclick="saveSubject()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium">저장</button>
+            <button onclick="closeSubjectModal()" class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded text-sm font-medium">취소</button>
+            <button onclick="saveSubject()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium">저장</button>
         </div>
     </div>
 </div>
@@ -234,9 +241,43 @@
         const token = localStorage.getItem("accessToken");
         if(!token) return logout();
         initCalendar();
+        setupEnterKeyListeners();
         await fetchUserInfo();
         await loadInitialData();
     });
+
+    function setupEnterKeyListeners() {
+        $('#semester-modal input').on('keydown', function(e) {
+            if (e.key === 'Enter') saveSemester();
+        });
+        $('#subject-modal input').on('keydown', function(e) {
+            if (e.key === 'Enter') saveSubject();
+        });
+        $('#assignment-modal input, #assignment-modal select').on('keydown', function(e) {
+            if (e.key === 'Enter') saveAssignment();
+        });
+    }
+
+    function getDdayTag(dueDateStr, isCompleted) {
+        if (!dueDateStr) return '';
+        if (isCompleted) {
+            return '<span class="text-[10px] font-bold bg-gray-300 text-gray-700 px-1.5 py-0.5 rounded">완료</span>';
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const due = new Date(dueDateStr.split('T')[0]);
+        due.setHours(0, 0, 0, 0);
+
+        const diffTime = due - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays < 0) return '<span class="text-[10px] font-bold bg-gray-500 text-white px-1.5 py-0.5 rounded">마감</span>';
+        if (diffDays === 0) return '<span class="text-[10px] font-bold bg-red-500 text-white px-1.5 py-0.5 rounded animate-pulse">D-DAY</span>';
+        if (diffDays === 1) return '<span class="text-[10px] font-bold bg-orange-500 text-white px-1.5 py-0.5 rounded">D-1</span>';
+        if (diffDays <= 7) return `<span class="text-[10px] font-bold bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded">D-${diffDays}</span>`;
+        return `<span class="text-[10px] font-bold bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded">D-${diffDays}</span>`;
+    }
 
     async function fetchUserInfo() {
         try {
@@ -245,10 +286,11 @@
         } catch(e) {}
     }
 
+    // 핵심 변경 부분 1: 초기 데이터 로드 시 deleted: false 전달
     async function loadInitialData() {
         try {
-            state.semesters = await authAjax({ url: '/semester/list', method: 'GET' });
-            state.subjects = await authAjax({ url: '/subject/list', method: 'GET' });
+            state.semesters = await authAjax({ url: '/semester/list', method: 'GET', data: { deleted: false } });
+            state.subjects = await authAjax({ url: '/subject/list', method: 'GET', data: { deleted: false } });
 
             if (state.semesters.length > 0) {
                 const savedSemesterId = Number(localStorage.getItem('currentSemesterId'));
@@ -264,6 +306,7 @@
         } catch(e) {}
     }
 
+    // 핵심 변경 부분 2: 과제 데이터 로드 시 deleted: false 전달
     async function fetchFilteredAssignments() {
         if (!state.currentSemesterId) {
             render();
@@ -272,7 +315,8 @@
         const selectedSubjectName = $('#filter-subject').val();
         const selectedCategories = $('.filter-category:checked').map(function() { return this.value; }).get();
 
-        let reqData = {};
+        // 기본적으로 deleted: false 상태의 데이터만 요청하도록 세팅
+        let reqData = { deleted: false };
         if (selectedSubjectName) reqData.subjectName = selectedSubjectName;
         if (selectedCategories.length > 0) reqData.categories = selectedCategories.join(',');
 
@@ -284,19 +328,21 @@
 
     function render() {
         renderSidebar();
+
         if (!state.currentSemesterId) {
-            $('#current-semester-title').addClass('hidden');
+            $('#header-semester-title').addClass('hidden');
             $('#subject-section, #assignment-section').addClass('hidden');
             $('#empty-semester-state').removeClass('hidden').addClass('flex');
             if(window.calendar) window.calendar.removeAllEvents();
             return;
         }
+
         $('#empty-semester-state').removeClass('flex').addClass('hidden');
-        $('#current-semester-title').removeClass('hidden');
+        $('#header-semester-title').removeClass('hidden');
         $('#subject-section, #assignment-section').removeClass('hidden');
 
         const currentSem = state.semesters.find(s => s.id === state.currentSemesterId);
-        $('#current-semester-title').text(currentSem.semesterName);
+        $('#header-semester-title').text(currentSem.semesterName);
 
         const filteredSubjects = state.subjects.filter(s => s.semesterId === state.currentSemesterId);
         renderSubjects(filteredSubjects);
@@ -310,13 +356,13 @@
 
     function renderSidebar() {
         const listHtml = state.semesters.map(s => `
-            <li class="flex justify-between items-center p-3 rounded-lg cursor-pointer font-medium transition
+            <li class="flex justify-between items-center p-2.5 rounded-lg cursor-pointer font-medium transition text-sm
                 ${s.id === state.currentSemesterId ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}"
                 onclick="changeSemester(${s.id})">
                 <span class="flex-1 truncate">${s.semesterName}</span>
-                <div class="flex space-x-2 shrink-0 ml-2">
-                    <button onclick="openSemesterModal(${s.id}, '${s.semesterName}'); event.stopPropagation();" class="text-gray-400 hover:text-blue-500 text-sm">✎</button>
-                    <button onclick="deleteSemester(${s.id}, event); event.stopPropagation();" class="text-gray-400 hover:text-red-500 text-sm">🗑</button>
+                <div class="flex space-x-1.5 shrink-0 ml-2">
+                    <button onclick="openSemesterModal(${s.id}, '${s.semesterName}'); event.stopPropagation();" class="text-gray-400 hover:text-blue-500">✎</button>
+                    <button onclick="deleteSemester(${s.id}, event); event.stopPropagation();" class="text-gray-400 hover:text-red-500">🗑</button>
                 </div>
             </li>
         `).join('');
@@ -326,15 +372,15 @@
     function renderSubjects(subjects) {
         const container = $('#subject-container');
         if(subjects.length === 0) {
-            container.html('<p class="text-sm text-gray-500 p-2">생성된 과목이 없습니다.</p>');
+            container.html('<p class="text-xs text-gray-500 p-1">생성된 과목이 없습니다.</p>');
             return;
         }
         const html = subjects.map(s => `
-            <div class="min-w-[160px] bg-white border border-gray-200 p-4 rounded-xl shadow-sm flex justify-between items-center group hover:border-blue-300 transition">
-                <span class="font-medium text-gray-800 truncate">${s.subjectName}</span>
+            <div class="min-w-[140px] bg-white border border-gray-200 p-2.5 rounded-lg shadow-sm flex justify-between items-center group hover:border-blue-300 transition">
+                <span class="font-medium text-gray-800 text-sm truncate">${s.subjectName}</span>
                 <div class="hidden group-hover:flex space-x-2 ml-2">
-                    <button onclick="openSubjectModal(${s.id}, '${s.subjectName}')" class="text-gray-400 hover:text-blue-500">✎</button>
-                    <button onclick="deleteSubject(${s.id})" class="text-gray-400 hover:text-red-500">✖</button>
+                    <button onclick="openSubjectModal(${s.id}, '${s.subjectName}')" class="text-gray-400 hover:text-blue-500 text-sm">✎</button>
+                    <button onclick="deleteSubject(${s.id})" class="text-gray-400 hover:text-red-500 text-sm">✖</button>
                 </div>
             </div>
         `).join('');
@@ -354,8 +400,8 @@
         let completedHtml = '';
         let incompleteHtml = '';
         if(assignments.length === 0){
-            $('#incomplete-assignments').html('<p class="text-sm text-gray-500 text-center py-10">과제가 없습니다.</p>');
-            $('#completed-assignments').html('<p class="text-sm text-gray-500 text-center py-10">완료된 과제가 없습니다.</p>');
+            $('#incomplete-assignments').html('<p class="text-sm text-gray-500 text-center py-8">과제가 없습니다.</p>');
+            $('#completed-assignments').html('<p class="text-sm text-gray-500 text-center py-8">완료된 과제가 없습니다.</p>');
             return;
         }
         assignments.forEach(a => {
@@ -363,22 +409,25 @@
             const isCompleted = a.isComplete;
             let catKor = a.category === 'ASSIGNMENT' ? '과제' : (a.category === 'LECTURE' ? '강의' : '할 일');
             const displayDate = a.dueDate ? a.dueDate.split('T')[0] : '';
+            const ddayTag = getDdayTag(a.dueDate, isCompleted);
+
             const itemHtml = `
-                <div class="${isCompleted ? 'bg-gray-50 opacity-70' : 'bg-white shadow-sm'} border p-5 rounded-xl flex justify-between items-center hover:shadow-md transition">
-                    <div class="flex items-center space-x-4 flex-1 truncate">
-                        <button onclick='toggleAssignmentStatus(${a.id}, ${!isCompleted})' class="shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center ${isCompleted ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'}">
+                <div class="${isCompleted ? 'bg-gray-50 opacity-70' : 'bg-white shadow-sm'} border p-3.5 rounded-lg flex justify-between items-center hover:shadow-md transition">
+                    <div class="flex items-center space-x-3 flex-1 truncate">
+                        <button onclick='toggleAssignmentStatus(${a.id}, ${!isCompleted})' class="shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center ${isCompleted ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'} text-xs">
                             ${isCompleted ? '✓' : ''}
                         </button>
                         <div class="truncate">
-                            <div class="flex items-center space-x-2 mb-1">
-                                <span class="text-xs font-bold ${isCompleted ? 'bg-gray-200' : 'text-blue-600 bg-blue-100'} px-2 py-1 rounded">${catKor}</span>
-                                <span class="text-xs text-gray-500">~ ${displayDate}</span>
+                            <div class="flex items-center space-x-2 mb-0.5">
+                                <span class="text-[10px] font-bold ${isCompleted ? 'bg-gray-200' : 'text-blue-600 bg-blue-100'} px-1.5 py-0.5 rounded">${catKor}</span>
+                                ${ddayTag}
+                                <span class="text-[11px] text-gray-500">~ ${displayDate}</span>
                             </div>
-                            <h3 class="font-bold truncate ${isCompleted ? 'line-through text-gray-400' : ''}">${a.assignmentName}</h3>
-                            <p class="text-sm text-gray-500">${subject.subjectName}</p>
+                            <h3 class="font-semibold text-sm truncate ${isCompleted ? 'line-through text-gray-400' : 'text-gray-800'}">${a.assignmentName}</h3>
+                            <p class="text-[11px] text-gray-500">${subject.subjectName}</p>
                         </div>
                     </div>
-                    <div class="flex items-center space-x-3 ml-2">
+                    <div class="flex items-center space-x-2.5 ml-2">
                         <button onclick='openAssignmentModal(${JSON.stringify(a)})' class="text-gray-400 hover:text-blue-600">✎</button>
                         <button onclick="deleteAssignment(${a.id})" class="text-gray-400 hover:text-red-500">🗑</button>
                     </div>
@@ -387,8 +436,8 @@
             if (isCompleted) completedHtml += itemHtml;
             else incompleteHtml += itemHtml;
         });
-        $('#completed-assignments').html(completedHtml || '<p class="text-center py-5 text-gray-400">없음</p>');
-        $('#incomplete-assignments').html(incompleteHtml || '<p class="text-center py-5 text-gray-400">없음</p>');
+        $('#completed-assignments').html(completedHtml || '<p class="text-center py-4 text-sm text-gray-400">없음</p>');
+        $('#incomplete-assignments').html(incompleteHtml || '<p class="text-center py-4 text-sm text-gray-400">없음</p>');
     }
 
     /* --- 핵심 제어 로직 --- */
@@ -401,7 +450,6 @@
         state.currentSemesterId = id;
         localStorage.setItem('currentSemesterId', id);
 
-        // 학기 클릭 시 사이드바가 열려있다면 자동으로 닫기
         if (!$('#sidebar').hasClass('-translate-x-full')) {
             toggleSidebar();
         }
@@ -422,6 +470,7 @@
             $('#semester-modal-name').val('');
         }
         $('#semester-modal').removeClass('hidden').addClass('modal-show');
+        setTimeout(() => $('#semester-modal-name').focus(), 100);
     }
 
     function closeSemesterModal() { $('#semester-modal').addClass('hidden').removeClass('modal-show'); }
@@ -448,6 +497,7 @@
         if(id) { $('#subject-modal-title').text('과목 수정'); $('#subject-modal-id').val(id); $('#subject-modal-name').val(oldName); }
         else { $('#subject-modal-title').text('새 과목 추가'); $('#subject-modal-id').val(''); $('#subject-modal-name').val(''); }
         $('#subject-modal').removeClass('hidden').addClass('modal-show');
+        setTimeout(() => $('#subject-modal-name').focus(), 100);
     }
 
     function closeSubjectModal() { $('#subject-modal').addClass('hidden').removeClass('modal-show'); }
@@ -489,6 +539,7 @@
             $('#modal-category').val('ASSIGNMENT'); $('#modal-complete-wrapper').addClass('hidden');
         }
         $('#assignment-modal').removeClass('hidden').addClass('modal-show');
+        setTimeout(() => $('#modal-name').focus(), 100);
     }
 
     function closeAssignmentModal() { $('#assignment-modal').addClass('hidden').removeClass('modal-show'); }

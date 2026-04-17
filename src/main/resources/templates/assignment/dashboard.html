@@ -129,8 +129,12 @@
         </div>
     </div>
 
-    <button onclick="toggleCalendar()" class="absolute bottom-6 right-6 w-12 h-12 md:w-14 md:h-14 bg-blue-600 text-white rounded-full shadow-xl flex items-center justify-center hover:bg-blue-700 transition transform hover:scale-105 z-20 text-xl md:text-2xl">
+    <button onclick="toggleCalendar()" class="absolute bottom-20 md:bottom-24 right-6 w-12 h-12 md:w-14 md:h-14 bg-blue-600 text-white rounded-full shadow-xl flex items-center justify-center hover:bg-blue-700 transition transform hover:scale-105 z-20 text-xl md:text-2xl">
         📅
+    </button>
+
+    <button onclick="openPiP()" class="absolute bottom-6 right-6 w-12 h-12 md:w-14 md:h-14 bg-gray-800 text-white rounded-full shadow-xl flex items-center justify-center hover:bg-gray-700 transition transform hover:scale-105 z-20 text-xl md:text-2xl" title="미니 창으로 띄우기">
+        📌
     </button>
 </main>
 
@@ -407,6 +411,9 @@
         semesterAssignments.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
         renderAssignments(semesterAssignments, filteredSubjects);
         renderCalendar(semesterAssignments, filteredSubjects);
+
+        // 데이터가 렌더링될 때 PiP 창도 함께 최신화
+        renderPiP();
     }
 
     function renderSidebar() {
@@ -658,6 +665,138 @@
             return { title: a.assignmentName, start: a.dueDate ? a.dueDate.split('T')[0] : '', backgroundColor: color, borderColor: color, allDay: true, extendedProps: { subject: sub.subjectName, cat: catKor } };
         });
         window.calendar.addEventSource(events);
+    }
+
+    /* --- Document PiP (미니 창) 로직 --- */
+    let pipWindow = null;
+
+    async function openPiP() {
+        if (!('documentPictureInPicture' in window)) {
+            alert('현재 브라우저에서는 미니 창 기능을 지원하지 않습니다. (크롬 기반 브라우저 최신 버전 권장)');
+            return;
+        }
+
+        try {
+            // 이미 열려있다면 포커스만 맞춤
+            if (pipWindow) {
+                pipWindow.focus();
+                return;
+            }
+
+            // PiP 창 열기 (사이즈 지정)
+            pipWindow = await documentPictureInPicture.requestWindow({
+                width: 320,
+                height: 500,
+            });
+
+            pipWindow.addEventListener('pagehide', () => {
+                pipWindow = null;
+            });
+
+            // Tailwind CSS 스크립트 주입
+            const tailwindScript = pipWindow.document.createElement('script');
+            tailwindScript.src = "https://cdn.tailwindcss.com";
+            pipWindow.document.head.appendChild(tailwindScript);
+
+            // 기존 스타일 복사 주입
+            [...document.styleSheets].forEach((styleSheet) => {
+                try {
+                    const cssRules = [...styleSheet.cssRules].map((rule) => rule.cssText).join('');
+                    const style = document.createElement('style');
+                    style.textContent = cssRules;
+                    pipWindow.document.head.appendChild(style);
+                } catch (e) {
+                    const link = document.createElement('link');
+                    link.rel = 'stylesheet';
+                    link.type = styleSheet.type;
+                    link.media = styleSheet.media;
+                    link.href = styleSheet.href;
+                    pipWindow.document.head.appendChild(link);
+                }
+            });
+
+            // 내부 UI 뼈대 생성
+            pipWindow.document.body.className = "bg-gray-50 flex flex-col h-screen overflow-hidden font-sans";
+            pipWindow.document.body.innerHTML = `
+                <div class="bg-gray-800 text-white p-3 flex justify-between items-center shrink-0 shadow-md z-10">
+                    <h3 class="font-bold text-sm">⚡ 미완료 과제</h3>
+                    <select id="pip-semester-select" class="text-xs bg-gray-700 border border-gray-600 text-white rounded px-2 py-1 outline-none cursor-pointer focus:ring-2 focus:ring-blue-500"></select>
+                </div>
+                <div id="pip-list" class="flex-1 overflow-y-auto p-3 space-y-3"></div>
+            `;
+
+            // 학기 변경 이벤트 연결
+            pipWindow.document.getElementById('pip-semester-select').addEventListener('change', async (e) => {
+                const newSemId = Number(e.target.value);
+                if(newSemId) {
+                    await changeSemester(newSemId);
+                }
+            });
+
+            // Tailwind 적용 시간 확보 후 렌더링
+            setTimeout(() => renderPiP(), 100);
+
+        } catch (error) {
+            console.error(error);
+            alert('미니 창을 여는 데 실패했습니다.');
+        }
+    }
+
+    function renderPiP() {
+        if (!pipWindow) return;
+
+        const selectEl = pipWindow.document.getElementById('pip-semester-select');
+        if(selectEl) {
+            selectEl.innerHTML = state.semesters.map(s =>
+                `<option value="${s.id}" ${s.id === state.currentSemesterId ? 'selected' : ''}>${s.semesterName}</option>`
+            ).join('');
+        }
+
+        const listEl = pipWindow.document.getElementById('pip-list');
+        if(!listEl) return;
+
+        const filteredSubjects = state.subjects.filter(s => s.semesterId === state.currentSemesterId);
+        const semesterAssignments = state.assignments.filter(a => filteredSubjects.some(sub => sub.id === a.subjectId));
+        const incompleteList = semesterAssignments.filter(a => !a.isComplete);
+
+        if (incompleteList.length === 0) {
+            listEl.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full opacity-50 mt-10">
+                    <span class="text-4xl mb-3">🎉</span>
+                    <p class="text-sm font-bold text-gray-700">모든 과제 완료!</p>
+                </div>`;
+            return;
+        }
+
+        listEl.innerHTML = incompleteList.map(a => {
+            const subject = filteredSubjects.find(s => s.id === a.subjectId) || { subjectName: 'Unknown' };
+            const displayDate = a.dueDate ? a.dueDate.split('T')[0] : '';
+            const ddayTag = getDdayTag(a.dueDate, a.isComplete);
+
+            return `
+                <div class="bg-white border border-gray-200 p-3.5 rounded-xl shadow-sm flex flex-col transition">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-sm font-bold text-gray-800 pr-2 leading-tight">${a.assignmentName}</span>
+                        <div class="shrink-0">${ddayTag}</div>
+                    </div>
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded truncate max-w-[60%]">${subject.subjectName}</span>
+                        <span class="text-[11px] text-gray-400 font-medium">~ ${displayDate}</span>
+                    </div>
+                    <button class="pip-complete-btn w-full bg-gray-50 border border-gray-200 text-gray-600 hover:bg-green-50 hover:text-green-600 hover:border-green-300 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1" data-id="${a.id}">
+                        ✓ 완료 처리하기
+                    </button>
+                </div>
+            `;
+        }).join('');
+
+        const btns = pipWindow.document.querySelectorAll('.pip-complete-btn');
+        btns.forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const id = Number(e.currentTarget.getAttribute('data-id'));
+                await toggleAssignmentStatus(id, true);
+            });
+        });
     }
 </script>
 </body>

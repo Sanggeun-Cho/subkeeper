@@ -220,19 +220,74 @@
     };
 
     function authAjax(options) {
-        return $.ajax({
-            ...options,
-            beforeSend: function(xhr) {
-                const token = localStorage.getItem("accessToken");
-                if (token) xhr.setRequestHeader("Authorization", token);
-            }
-        }).fail(function(xhr) {
-            if (xhr.status === 401 || xhr.status === 403) {
-                alert("세션이 만료되었습니다. 다시 로그인해주세요.");
-                logout();
-            } else {
-                console.error("API Error:", xhr);
-                alert("요청 처리 중 오류가 발생했습니다.");
+        return new Promise(async (resolve, reject) => {
+            try {
+                // 1. 기존 요청 시도
+                const result = await $.ajax({
+                    ...options,
+                    beforeSend: function(xhr) {
+                        const token = localStorage.getItem("accessToken");
+                        if (token) xhr.setRequestHeader("Authorization", token);
+                    }
+                });
+                resolve(result);
+            } catch (xhr) {
+                // 2. 401 에러(액세스 토큰 만료) 감지
+                if (xhr.status === 401) {
+                    const refreshToken = localStorage.getItem("refreshToken");
+                    if (!refreshToken) {
+                        alert("세션이 만료되었습니다. 다시 로그인해주세요.");
+                        logout();
+                        return reject(xhr);
+                    }
+
+                    // 3. login.html과 동일한 방식으로 새로운 액세스 토큰 요청
+                    $.ajax({
+                        url: "/api/auth",
+                        method: "POST",
+                        beforeSend: function(refreshXhr) {
+                            refreshXhr.setRequestHeader("RefreshToken", refreshToken);
+                        },
+                        contentType: 'application/json; charset=utf-8',
+                        success: async (data, status, refreshXhr) => {
+                            // 4. 새 토큰 발급 성공 시 스토리지 업데이트
+                            const newAccessToken = refreshXhr.getResponseHeader("Authorization");
+                            if (newAccessToken) {
+                                localStorage.setItem("accessToken", newAccessToken);
+
+                                // 5. 실패했던 원래 API 요청을 새 토큰으로 재시도
+                                try {
+                                    const retryResult = await $.ajax({
+                                        ...options,
+                                        beforeSend: function(retryXhr) {
+                                            retryXhr.setRequestHeader("Authorization", newAccessToken);
+                                        }
+                                    });
+                                    resolve(retryResult); // 최종 성공 데이터 반환
+                                } catch (retryError) {
+                                    reject(retryError);
+                                }
+                            } else {
+                                alert("토큰 갱신에 실패했습니다. 다시 로그인해주세요.");
+                                logout();
+                                reject(xhr);
+                            }
+                        },
+                        error: () => {
+                            // 리프레시 토큰마저 만료된 경우
+                            alert("로그인 세션이 완전히 만료되었습니다. 다시 로그인해주세요.");
+                            logout();
+                            reject(xhr);
+                        }
+                    });
+                } else if (xhr.status === 403) {
+                    alert("접근 권한이 없습니다.");
+                    logout();
+                    reject(xhr);
+                } else {
+                    console.error("API Error:", xhr);
+                    reject(xhr);
+                }
             }
         });
     }

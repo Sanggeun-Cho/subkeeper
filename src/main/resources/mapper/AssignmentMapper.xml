@@ -47,6 +47,6 @@
         <include refid="commonWhere"/>
         AND semester.user_id = #{reqUserId}
 
-        ORDER BY assignment.id DESC
+        ORDER BY assignment.due_date ASC
     </select>
 </mapper>

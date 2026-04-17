@@ -408,7 +408,7 @@
         updateSubjectFilterSelect(filteredSubjects);
 
         const semesterAssignments = state.assignments.filter(a => filteredSubjects.some(sub => sub.id === a.subjectId));
-        semesterAssignments.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+        // semesterAssignments.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
         renderAssignments(semesterAssignments, filteredSubjects);
         renderCalendar(semesterAssignments, filteredSubjects);
 
@@ -757,6 +757,9 @@
 
         const filteredSubjects = state.subjects.filter(s => s.semesterId === state.currentSemesterId);
         const semesterAssignments = state.assignments.filter(a => filteredSubjects.some(sub => sub.id === a.subjectId));
+
+        // semesterAssignments.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
         const incompleteList = semesterAssignments.filter(a => !a.isComplete);
 
         if (incompleteList.length === 0) {

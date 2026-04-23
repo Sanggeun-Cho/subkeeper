@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>2359</title>
+    <title>SubKeeper</title>
     <link rel="icon" href="/images/icon.png" type="image/png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
@@ -11,12 +11,9 @@
     <style>
         body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; }
         .sidebar-transition { transition: transform 0.3s ease-in-out; }
-        /* 스크롤바 디자인: 얇고 공간을 적게 차지하도록 수정 */
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-
-        /* 모달 애니메이션 */
         .modal-show { display: flex !important; animation: fadeIn 0.2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
@@ -76,14 +73,26 @@
             </button>
         </div>
 
-        <section class="mb-4 shrink-0 hidden" id="subject-section">
-            <div class="flex items-center justify-between mb-2">
-                <h2 class="text-lg font-semibold text-gray-800">과목</h2>
-                <button onclick="openSubjectModal()" class="text-xs bg-blue-100 text-blue-700 py-1 px-2.5 rounded-md hover:bg-blue-200 font-medium">+ 과목 추가</button>
-            </div>
-            <div id="subject-container" class="flex gap-3 overflow-x-auto pb-1.5"></div>
-        </section>
+        <section class="mb-4 shrink-0 hidden bg-white border border-gray-200 p-2 rounded-xl shadow-sm transition-all" id="subject-section">
+            <button onclick="toggleSubjectAccordion()" class="w-full flex justify-between items-center px-2 py-1 focus:outline-none group">
+                <div class="flex items-center gap-2">
+                    <h2 class="text-sm font-semibold text-gray-800 group-hover:text-blue-600 transition flex items-center">
+                        <span class="w-1 h-5 bg-indigo-400 rounded-sm mr-2"></span>과목 관리
+                    </h2>
+                </div>
+                <svg id="subject-toggle-icon" class="w-5 h-5 text-gray-400 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </button>
 
+            <div id="subject-toggle-content" class="hidden px-2 pb-1 pt-2 border-t border-gray-100 mt-2">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs text-gray-500 font-medium">등록된 과목</span>
+                    <button onclick="openSubjectModal()" class="text-xs bg-blue-100 text-blue-700 py-1 px-2.5 rounded-md hover:bg-blue-200 font-medium transition">+ 과목 추가</button>
+                </div>
+                <div id="subject-container" class="flex gap-2 overflow-x-auto pb-1.5"></div>
+            </div>
+        </section>
         <div class="hidden flex-1 flex flex-col overflow-hidden" id="assignment-section">
             <div class="bg-white border border-gray-200 p-2.5 md:p-3 rounded-lg shadow-sm mb-4 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div class="flex items-center space-x-2 w-full sm:w-auto">
@@ -106,9 +115,9 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 flex-1 min-h-0">
+            <div class="flex flex-col lg:grid lg:grid-cols-2 gap-4 md:gap-6 flex-1 min-h-0">
 
-                <section class="flex flex-col min-h-0">
+                <section class="flex flex-col min-h-0 flex-1">
                     <div class="flex items-center justify-between mb-2 shrink-0">
                         <h2 class="text-base font-semibold text-gray-800 flex items-center">
                             <span class="w-2.5 h-2.5 rounded-full bg-blue-500 mr-2"></span>진행 중인 과제
@@ -118,11 +127,16 @@
                     <div id="incomplete-assignments" class="space-y-3 flex-1 overflow-y-auto pr-1 pb-2 min-h-0"></div>
                 </section>
 
-                <section class="flex flex-col min-h-0">
-                    <h2 class="text-base font-semibold text-gray-800 mb-2 shrink-0 flex items-center">
-                        <span class="w-2.5 h-2.5 rounded-full bg-gray-400 mr-2"></span>완료된 과제
-                    </h2>
-                    <div id="completed-assignments" class="space-y-3 flex-1 overflow-y-auto pr-1 pb-2 min-h-0"></div>
+                <section id="completed-section" class="flex flex-col min-h-0 lg:flex-1">
+                    <div class="flex items-center justify-between mb-2 shrink-0 cursor-pointer lg:cursor-default" onclick="toggleCompletedAccordion()">
+                        <h2 class="text-base font-semibold text-gray-800 flex items-center">
+                            <span class="w-2.5 h-2.5 rounded-full bg-gray-400 mr-2"></span>완료된 과제
+                        </h2>
+                        <svg id="completed-toggle-icon" class="w-5 h-5 text-gray-400 transform transition-transform duration-300 lg:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                    <div id="completed-assignments" class="space-y-3 flex-1 overflow-y-auto pr-1 pb-2 min-h-0 hidden lg:block"></div>
                 </section>
 
             </div>
@@ -226,7 +240,6 @@
     function authAjax(options) {
         return new Promise(async (resolve, reject) => {
             try {
-                // 1. 기존 요청 시도
                 const result = await $.ajax({
                     ...options,
                     beforeSend: function(xhr) {
@@ -236,7 +249,6 @@
                 });
                 resolve(result);
             } catch (xhr) {
-                // 2. 401 에러(액세스 토큰 만료) 감지
                 if (xhr.status === 401) {
                     const refreshToken = localStorage.getItem("refreshToken");
                     if (!refreshToken) {
@@ -245,7 +257,6 @@
                         return reject(xhr);
                     }
 
-                    // 3. login.html과 동일한 방식으로 새로운 액세스 토큰 요청
                     $.ajax({
                         url: "/api/auth",
                         method: "POST",
@@ -254,12 +265,9 @@
                         },
                         contentType: 'application/json; charset=utf-8',
                         success: async (data, status, refreshXhr) => {
-                            // 4. 새 토큰 발급 성공 시 스토리지 업데이트
                             const newAccessToken = refreshXhr.getResponseHeader("Authorization");
                             if (newAccessToken) {
                                 localStorage.setItem("accessToken", newAccessToken);
-
-                                // 5. 실패했던 원래 API 요청을 새 토큰으로 재시도
                                 try {
                                     const retryResult = await $.ajax({
                                         ...options,
@@ -267,7 +275,7 @@
                                             retryXhr.setRequestHeader("Authorization", newAccessToken);
                                         }
                                     });
-                                    resolve(retryResult); // 최종 성공 데이터 반환
+                                    resolve(retryResult);
                                 } catch (retryError) {
                                     reject(retryError);
                                 }
@@ -278,7 +286,6 @@
                             }
                         },
                         error: () => {
-                            // 리프레시 토큰마저 만료된 경우
                             alert("로그인 세션이 완전히 만료되었습니다. 다시 로그인해주세요.");
                             logout();
                             reject(xhr);
@@ -345,7 +352,6 @@
         } catch(e) {}
     }
 
-    // 핵심 변경 부분 1: 초기 데이터 로드 시 deleted: false 전달
     async function loadInitialData() {
         try {
             state.semesters = await authAjax({ url: '/semester/list', method: 'GET', data: { deleted: false } });
@@ -365,7 +371,6 @@
         } catch(e) {}
     }
 
-    // 핵심 변경 부분 2: 과제 데이터 로드 시 deleted: false 전달
     async function fetchFilteredAssignments() {
         if (!state.currentSemesterId) {
             render();
@@ -374,7 +379,6 @@
         const selectedSubjectName = $('#filter-subject').val();
         const selectedCategories = $('.filter-category:checked').map(function() { return this.value; }).get();
 
-        // 기본적으로 deleted: false 상태의 데이터만 요청하도록 세팅
         let reqData = { deleted: false };
         if (selectedSubjectName) reqData.subjectName = selectedSubjectName;
         if (selectedCategories.length > 0) reqData.categories = selectedCategories.join(',');
@@ -408,11 +412,8 @@
         updateSubjectFilterSelect(filteredSubjects);
 
         const semesterAssignments = state.assignments.filter(a => filteredSubjects.some(sub => sub.id === a.subjectId));
-        // semesterAssignments.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
         renderAssignments(semesterAssignments, filteredSubjects);
         renderCalendar(semesterAssignments, filteredSubjects);
-
-        // 데이터가 렌더링될 때 PiP 창도 함께 최신화
         renderPiP();
     }
 
@@ -502,7 +503,19 @@
         $('#incomplete-assignments').html(incompleteHtml || '<p class="text-center py-4 text-sm text-gray-400">없음</p>');
     }
 
-    /* --- 핵심 제어 로직 --- */
+    /* --- 추가된 토글 로직 --- */
+    function toggleSubjectAccordion() {
+        $('#subject-toggle-content').toggleClass('hidden');
+        $('#subject-toggle-icon').toggleClass('rotate-180');
+    }
+
+    function toggleCompletedAccordion() {
+        if(window.innerWidth >= 1024) return;
+        $('#completed-assignments').toggleClass('hidden');
+        $('#completed-toggle-icon').toggleClass('rotate-180');
+        $('#completed-section').toggleClass('flex-1');
+    }
+
     function toggleSidebar() {
         $('#sidebar').toggleClass('-translate-x-full');
         $('#sidebar-overlay').toggleClass('hidden');
@@ -667,7 +680,6 @@
         window.calendar.addEventSource(events);
     }
 
-    /* --- Document PiP (미니 창) 로직 --- */
     let pipWindow = null;
 
     async function openPiP() {
@@ -677,13 +689,11 @@
         }
 
         try {
-            // 이미 열려있다면 포커스만 맞춤
             if (pipWindow) {
                 pipWindow.focus();
                 return;
             }
 
-            // PiP 창 열기 (사이즈 지정)
             pipWindow = await documentPictureInPicture.requestWindow({
                 width: 320,
                 height: 500,
@@ -693,12 +703,10 @@
                 pipWindow = null;
             });
 
-            // Tailwind CSS 스크립트 주입
             const tailwindScript = pipWindow.document.createElement('script');
             tailwindScript.src = "https://cdn.tailwindcss.com";
             pipWindow.document.head.appendChild(tailwindScript);
 
-            // 기존 스타일 복사 주입
             [...document.styleSheets].forEach((styleSheet) => {
                 try {
                     const cssRules = [...styleSheet.cssRules].map((rule) => rule.cssText).join('');
@@ -715,7 +723,6 @@
                 }
             });
 
-            // 내부 UI 뼈대 생성
             pipWindow.document.body.className = "bg-gray-50 flex flex-col h-screen overflow-hidden font-sans";
             pipWindow.document.body.innerHTML = `
                 <div class="bg-gray-800 text-white p-3 flex justify-between items-center shrink-0 shadow-md z-10">
@@ -725,7 +732,6 @@
                 <div id="pip-list" class="flex-1 overflow-y-auto p-3 space-y-3"></div>
             `;
 
-            // 학기 변경 이벤트 연결
             pipWindow.document.getElementById('pip-semester-select').addEventListener('change', async (e) => {
                 const newSemId = Number(e.target.value);
                 if(newSemId) {
@@ -733,7 +739,6 @@
                 }
             });
 
-            // Tailwind 적용 시간 확보 후 렌더링
             setTimeout(() => renderPiP(), 100);
 
         } catch (error) {
@@ -757,8 +762,6 @@
 
         const filteredSubjects = state.subjects.filter(s => s.semesterId === state.currentSemesterId);
         const semesterAssignments = state.assignments.filter(a => filteredSubjects.some(sub => sub.id === a.subjectId));
-
-        // semesterAssignments.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 
         const incompleteList = semesterAssignments.filter(a => !a.isComplete);
 
